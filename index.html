@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Custom BusTimes</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f4f4f4;
+}
+
+header {
+    background: #222;
+    color: white;
+    padding: 15px;
+    text-align: center;
+}
+
+section {
+    padding: 15px;
+}
+
+.box {
+    background: white;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 6px;
+}
+
+input, button {
+    width: 100%;
+    padding: 10px;
+    margin-top: 6px;
+    font-size: 16px;
+}
+
+button {
+    background: #0078d7;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+button:hover {
+    opacity: 0.9;
+}
+
+.company {
+    border-left: 8px solid #000;
+    margin-bottom: 20px;
+}
+
+.route {
+    padding: 8px;
+    border-bottom: 1px solid #ddd;
+}
+
+.route:last-child {
+    border-bottom: none;
+}
+
+.route strong {
+    font-size: 18px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>Custom BusTimes</h1>
+    <p>Create your own bus company & routes</p>
+</header>
+
+<section class="box">
+    <h2>Create Bus Company</h2>
+    <input id="companyName" placeholder="Company name">
+    <input id="companyColour" placeholder="Company colour (e.g. red or #e60000)">
+    <button onclick="addCompany()">Add Company</button>
+</section>
+
+<section class="box">
+    <h2>Add Route</h2>
+    <input id="routeCompany" placeholder="Company name">
+    <input id="routeNumber" placeholder="Route number">
+    <input id="routeName" placeholder="Route description">
+    <input id="routeDest" placeholder="Destination">
+    <button onclick="addRoute()">Add Route</button>
+</section>
+
+<section id="output"></section>
+
+<script>
+let data = JSON.parse(localStorage.getItem("busData")) || [];
+
+function save() {
+    localStorage.setItem("busData", JSON.stringify(data));
+}
+
+function addCompany() {
+    let name = companyName.value.trim();
+    let colour = companyColour.value.trim() || "#000";
+
+    if (!name) return alert("Enter a company name");
+
+    if (data.find(c => c.name === name)) {
+        return alert("Company already exists");
+    }
+
+    data.push({ name, colour, routes: [] });
+    save();
+    render();
+}
+
+function addRoute() {
+    let comp = routeCompany.value.trim();
+    let number = routeNumber.value.trim();
+    let name = routeName.value.trim();
+    let dest = routeDest.value.trim();
+
+    let company = data.find(c => c.name === comp);
+    if (!company) return alert("Company not found");
+
+    company.routes.push({
+        number,
+        name,
+        dest
+    });
+
+    save();
+    render();
+}
+
+function render() {
+    output.innerHTML = "";
+
+    data.forEach(c => {
+        let div = document.createElement("div");
+        div.className = "box company";
+        div.style.borderLeftColor = c.colour;
+
+        div.innerHTML = `<h2>${c.name}</h2>`;
+
+        c.routes.forEach(r => {
+            div.innerHTML += `
+            <div class="route">
+                <strong>${r.number}</strong> – ${r.name}<br>
+                <small>Destination: ${r.dest}</small>
+            </div>`;
+        });
+
+        output.appendChild(div);
+    });
+}
+
+render();
+</script>
+
+</body>
+</html>
