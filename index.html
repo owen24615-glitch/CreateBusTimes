@@ -2,25 +2,58 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Custom BusTimes</title>
+<title>CreateBusTimes</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
 body {
     margin: 0;
     font-family: Arial, sans-serif;
-    background: #f4f4f4;
+    background: #f2f2f2;
 }
 
 header {
-    background: #222;
+    background: #1a1a1a;
     color: white;
-    padding: 15px;
-    text-align: center;
+    padding: 12px 16px;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 22px;
+}
+
+nav {
+    background: #ffffff;
+    display: flex;
+    border-bottom: 1px solid #ccc;
+}
+
+nav button {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    background: none;
+    font-size: 15px;
+    cursor: pointer;
+}
+
+nav button:hover {
+    background: #eee;
+}
+
+nav button.active {
+    border-bottom: 3px solid #0078d7;
+    font-weight: bold;
 }
 
 section {
+    display: none;
     padding: 15px;
+}
+
+section.active {
+    display: block;
 }
 
 .box {
@@ -30,40 +63,32 @@ section {
     border-radius: 6px;
 }
 
+.company {
+    border-left: 6px solid #000;
+}
+
+.route, .vehicle {
+    padding: 8px 0;
+    border-bottom: 1px solid #ddd;
+}
+
+.route:last-child,
+.vehicle:last-child {
+    border-bottom: none;
+}
+
 input, button {
     width: 100%;
     padding: 10px;
     margin-top: 6px;
-    font-size: 16px;
+    font-size: 15px;
 }
 
-button {
+button.action {
     background: #0078d7;
     color: white;
     border: none;
     cursor: pointer;
-}
-
-button:hover {
-    opacity: 0.9;
-}
-
-.company {
-    border-left: 8px solid #000;
-    margin-bottom: 20px;
-}
-
-.route {
-    padding: 8px;
-    border-bottom: 1px solid #ddd;
-}
-
-.route:last-child {
-    border-bottom: none;
-}
-
-.route strong {
-    font-size: 18px;
 }
 </style>
 </head>
@@ -71,88 +96,135 @@ button:hover {
 <body>
 
 <header>
-    <h1>Custom BusTimes</h1>
-    <p>Create your own bus company & routes</p>
+    <h1>CreateBusTimes</h1>
 </header>
 
-<section class="box">
-    <h2>Create Bus Company</h2>
-    <input id="companyName" placeholder="Company name">
-    <input id="companyColour" placeholder="Company colour (e.g. red or #e60000)">
-    <button onclick="addCompany()">Add Company</button>
+<nav>
+    <button class="active" onclick="showSection('home')">Home</button>
+    <button onclick="showSection('routes')">Routes</button>
+    <button onclick="showSection('vehicles')">Vehicles</button>
+    <button onclick="showSection('addVehicle')">Add Vehicle</button>
+</nav>
+
+<section id="home" class="active">
+    <div class="box">
+        <h2>Create Bus Company</h2>
+        <input id="companyName" placeholder="Company name">
+        <input id="companyColour" placeholder="Company colour (e.g. #e60000)">
+        <button class="action" onclick="addCompany()">Add Company</button>
+    </div>
 </section>
 
-<section class="box">
-    <h2>Add Route</h2>
-    <input id="routeCompany" placeholder="Company name">
-    <input id="routeNumber" placeholder="Route number">
-    <input id="routeName" placeholder="Route description">
-    <input id="routeDest" placeholder="Destination">
-    <button onclick="addRoute()">Add Route</button>
+<section id="routes">
+    <div class="box">
+        <h2>Add Route</h2>
+        <input id="routeCompany" placeholder="Company name">
+        <input id="routeNumber" placeholder="Route number">
+        <input id="routeName" placeholder="Route description">
+        <input id="routeDest" placeholder="Destination">
+        <button class="action" onclick="addRoute()">Add Route</button>
+    </div>
+
+    <div id="routeOutput"></div>
 </section>
 
-<section id="output"></section>
+<section id="vehicles">
+    <div id="vehicleOutput"></div>
+</section>
+
+<section id="addVehicle">
+    <div class="box">
+        <h2>Add Vehicle</h2>
+        <input id="vehCompany" placeholder="Company name">
+        <input id="vehFleet" placeholder="Fleet number">
+        <input id="vehType" placeholder="Vehicle type (e.g. Enviro400)">
+        <input id="vehReg" placeholder="Registration">
+        <button class="action" onclick="addVehicle()">Add Vehicle</button>
+    </div>
+</section>
 
 <script>
-let data = JSON.parse(localStorage.getItem("busData")) || [];
+let data = JSON.parse(localStorage.getItem("cbtData")) || [];
 
 function save() {
-    localStorage.setItem("busData", JSON.stringify(data));
+    localStorage.setItem("cbtData", JSON.stringify(data));
+}
+
+function showSection(id) {
+    document.querySelectorAll("section").forEach(s => s.classList.remove("active"));
+    document.querySelectorAll("nav button").forEach(b => b.classList.remove("active"));
+    document.getElementById(id).classList.add("active");
+    event.target.classList.add("active");
 }
 
 function addCompany() {
-    let name = companyName.value.trim();
-    let colour = companyColour.value.trim() || "#000";
-
-    if (!name) return alert("Enter a company name");
-
-    if (data.find(c => c.name === name)) {
-        return alert("Company already exists");
-    }
-
-    data.push({ name, colour, routes: [] });
+    if (!companyName.value) return alert("Enter company name");
+    data.push({
+        name: companyName.value,
+        colour: companyColour.value || "#000",
+        routes: [],
+        vehicles: []
+    });
     save();
     render();
 }
 
 function addRoute() {
-    let comp = routeCompany.value.trim();
-    let number = routeNumber.value.trim();
-    let name = routeName.value.trim();
-    let dest = routeDest.value.trim();
-
-    let company = data.find(c => c.name === comp);
-    if (!company) return alert("Company not found");
-
-    company.routes.push({
-        number,
-        name,
-        dest
+    let c = data.find(x => x.name === routeCompany.value);
+    if (!c) return alert("Company not found");
+    c.routes.push({
+        number: routeNumber.value,
+        name: routeName.value,
+        dest: routeDest.value
     });
+    save();
+    render();
+}
 
+function addVehicle() {
+    let c = data.find(x => x.name === vehCompany.value);
+    if (!c) return alert("Company not found");
+    c.vehicles.push({
+        fleet: vehFleet.value,
+        type: vehType.value,
+        reg: vehReg.value
+    });
     save();
     render();
 }
 
 function render() {
-    output.innerHTML = "";
+    routeOutput.innerHTML = "";
+    vehicleOutput.innerHTML = "";
 
     data.forEach(c => {
-        let div = document.createElement("div");
-        div.className = "box company";
-        div.style.borderLeftColor = c.colour;
-
-        div.innerHTML = `<h2>${c.name}</h2>`;
-
+        // Routes
+        let rBox = document.createElement("div");
+        rBox.className = "box company";
+        rBox.style.borderLeftColor = c.colour;
+        rBox.innerHTML = `<h3>${c.name}</h3>`;
         c.routes.forEach(r => {
-            div.innerHTML += `
+            rBox.innerHTML += `
             <div class="route">
                 <strong>${r.number}</strong> – ${r.name}<br>
-                <small>Destination: ${r.dest}</small>
+                <small>${r.dest}</small>
             </div>`;
         });
+        routeOutput.appendChild(rBox);
 
-        output.appendChild(div);
+        // Vehicles
+        let vBox = document.createElement("div");
+        vBox.className = "box company";
+        vBox.style.borderLeftColor = c.colour;
+        vBox.innerHTML = `<h3>${c.name}</h3>`;
+        c.vehicles.forEach(v => {
+            vBox.innerHTML += `
+            <div class="vehicle">
+                <strong>${v.fleet}</strong> – ${v.type}<br>
+                <small>${v.reg}</small>
+            </div>`;
+        });
+        vehicleOutput.appendChild(vBox);
     });
 }
 
