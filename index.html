@@ -127,7 +127,6 @@ button {
     <button onclick="generateDuty()">Generate duty</button>
     <button onclick="saveDuty()">Save duty</button>
     <button onclick="loadDuty()">Load duty</button>
-
     <button onclick="addRoute()">Add new route</button>
 </div>
 
@@ -154,15 +153,15 @@ function addItem(){
     const type = document.getElementById("type").value;
 
     if(!routeEl.value || !depotEl.value) return alert("Enter route & depot");
-    if(type === 'trip' && (!time || !from || !to)) return alert("Fill all trip fields");
+    if(type==='trip' && (!time || !from || !to)) return alert("Fill all trip fields");
 
     currentRoute.route = routeEl.value;
     currentRoute.depot = depotEl.value;
 
-    let item = type === 'trip' ? {time, from, to, type} : {time, type};
+    let item = type==='trip' ? {time, from, to, type} : {time, type};
     currentRoute.items.push(item);
 
-    // Clear input fields
+    // Clear inputs
     document.getElementById("time").value = "";
     document.getElementById("from").value = "";
     document.getElementById("to").value = "";
@@ -177,10 +176,10 @@ function renderEditor(){
     currentRoute.items.forEach((t,i)=>{
         const d = document.createElement("div");
         d.className="trip-row";
-        d.draggable=true;
-        d.ondragstart=()=>dragIndex=i;
-        d.ondragover=e=>e.preventDefault();
-        d.ondrop=()=>swap(i);
+        d.draggable = true;
+        d.ondragstart = () => dragIndex=i;
+        d.ondragover = e => e.preventDefault();
+        d.ondrop = () => swap(i);
 
         if(t.type==='trip'){
             d.innerHTML=`
@@ -193,7 +192,7 @@ function renderEditor(){
         } else {
             d.innerHTML=`
                 <span>${t.time}</span>
-                <div colspan="2">Break</div>
+                <div>Break</div>
                 <span>Break</span>
                 <button onclick="del(${i})">✖</button>
             `;
@@ -202,7 +201,7 @@ function renderEditor(){
     });
 }
 
-// Swap items for drag
+// Swap items
 function swap(i){
     [currentRoute.items[dragIndex], currentRoute.items[i]] = [currentRoute.items[i], currentRoute.items[dragIndex]];
     renderEditor();
@@ -228,7 +227,7 @@ function addRoute(){
 // Generate duty card
 function generateDuty(){
     let html='';
-    dutyRoutesCopy = JSON.parse(JSON.stringify(dutyRoutes));
+    let dutyRoutesCopy = JSON.parse(JSON.stringify(dutyRoutes));
 
     if(currentRoute.items.length>0){
         dutyRoutesCopy.push(JSON.parse(JSON.stringify(currentRoute)));
@@ -244,7 +243,7 @@ function generateDuty(){
                 total+=toMin(items[i].time)-toMin(items[i-1].time);
         }
         let breakWarn = total>270;
-        let finish = '';
+        let finish='';
         for(let i=items.length-1;i>=0;i--){
             if(items[i].type==='trip'){ finish=items[i].to; break; }
         }
@@ -278,4 +277,28 @@ function generateDuty(){
                 ${breakWarn?'<span class="warn">Break required</span><br>':``}
                 Finish: ${finish}${badFinish?' ⚠':''}
             </div>
-        </
+        </div>`;
+    });
+
+    document.getElementById("output").innerHTML = html;
+}
+
+// Save/load all routes
+function saveDuty(){
+    localStorage.setItem("multiDuty", JSON.stringify({dutyRoutes, currentRoute}));
+    alert("Duty saved");
+}
+
+function loadDuty(){
+    const d = JSON.parse(localStorage.getItem("multiDuty"));
+    if(!d) return;
+    dutyRoutes = d.dutyRoutes;
+    currentRoute = d.currentRoute;
+    document.getElementById("route").value=currentRoute.route;
+    document.getElementById("depot").value=currentRoute.depot;
+    renderEditor();
+}
+</script>
+
+</body>
+</html>
