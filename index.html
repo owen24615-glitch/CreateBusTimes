@@ -161,7 +161,6 @@ function addItem(){
     let item = type==='trip' ? {time, from, to, type} : {time, type};
     currentRoute.items.push(item);
 
-    // Clear inputs
     document.getElementById("time").value = "";
     document.getElementById("from").value = "";
     document.getElementById("to").value = "";
@@ -169,7 +168,7 @@ function addItem(){
     renderEditor();
 }
 
-// Render editor with inline edit/delete & drag
+// Render editor
 function renderEditor(){
     const editor = document.getElementById("editor");
     editor.innerHTML = "";
@@ -213,7 +212,7 @@ function del(i){
     renderEditor();
 }
 
-// Add route to dutyRoutes array
+// Add route to dutyRoutes
 function addRoute(){
     if(!currentRoute.route || !currentRoute.depot || !currentRoute.items.length) return alert("Complete current route first");
     dutyRoutes.push(JSON.parse(JSON.stringify(currentRoute)));
@@ -224,23 +223,18 @@ function addRoute(){
     alert("Route added. You can start new route.");
 }
 
-// Generate duty card
+// Generate duty card in proper format
 function generateDuty(){
     let html='';
     let dutyRoutesCopy = JSON.parse(JSON.stringify(dutyRoutes));
-
-    if(currentRoute.items.length>0){
-        dutyRoutesCopy.push(JSON.parse(JSON.stringify(currentRoute)));
-    }
-
+    if(currentRoute.items.length>0) dutyRoutesCopy.push(JSON.parse(JSON.stringify(currentRoute)));
     if(dutyRoutesCopy.length===0) return alert("Add at least one route");
 
     dutyRoutesCopy.forEach(r=>{
         let items = r.items.slice().sort((a,b)=>a.time && b.time ? toMin(a.time)-toMin(b.time) : 0);
         let total=0;
         for(let i=1;i<items.length;i++){
-            if(items[i].type==='trip' && items[i-1].type==='trip')
-                total+=toMin(items[i].time)-toMin(items[i-1].time);
+            if(items[i].type==='trip' && items[i-1].type==='trip') total+=toMin(items[i].time)-toMin(items[i-1].time);
         }
         let breakWarn = total>270;
         let finish='';
@@ -256,28 +250,18 @@ function generateDuty(){
             </div>`;
 
         items.forEach(t=>{
-            if(t.type==='trip'){
-                html+=`
-                <div class="trip">
-                    <div><strong>${t.time}</strong></div>
-                    <div>${t.from} → ${t.to}</div>
-                </div>`;
-            } else {
-                html+=`
-                <div class="trip">
-                    <div><strong>${t.time}</strong></div>
-                    <div><em>Break</em></div>
-                </div>`;
-            }
+            html+=`<div class="trip">
+                        <div><strong>${t.time}</strong></div>
+                        <div>${t.type==='trip' ? t.from + ' → ' + t.to : '<em>Break</em>'}</div>
+                    </div>`;
         });
 
-        html+=`
-            <div class="footer">
-                Total duty: ${total} mins<br>
-                ${breakWarn?'<span class="warn">Break required</span><br>':``}
-                Finish: ${finish}${badFinish?' ⚠':''}
-            </div>
-        </div>`;
+        html+=`<div class="footer">
+                    Total duty: ${total} mins<br>
+                    ${breakWarn?'<span class="warn">Break required</span><br>':''}
+                    Finish: ${finish}${badFinish?' ⚠':''}
+                </div>
+            </div>`;
     });
 
     document.getElementById("output").innerHTML = html;
