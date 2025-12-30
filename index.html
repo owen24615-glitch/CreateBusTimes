@@ -2,225 +2,168 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>CreateBusTimes</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MyBusTimes Duty Generator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: #e6e6e6;
     margin: 0;
-    font-family: Arial, sans-serif;
-    background: #fafafa;
 }
 
 header {
-    background: #f3f0c8;
-    padding: 12px 16px;
-    border-bottom: 1px solid #ddd;
-    font-size: 20px;
-    font-weight: bold;
-}
-
-main {
-    padding: 16px;
-}
-
-h1 {
-    margin: 0;
-    font-size: 28px;
-}
-
-.sub {
-    color: #666;
-    margin-top: 6px;
-}
-
-.tabs {
-    margin-top: 20px;
-    border-bottom: 1px solid #ccc;
-}
-
-.tabs button {
-    border: none;
-    background: none;
-    padding: 10px 16px;
-    font-size: 15px;
-    cursor: pointer;
-}
-
-.tabs button.active {
-    border-bottom: 3px solid #6699cc;
-    font-weight: bold;
-}
-
-.list {
-    margin-top: 16px;
-}
-
-.item {
-    display: flex;
-    align-items: center;
-    margin-bottom: 12px;
-}
-
-.badge {
-    border: 2px solid #ccc;
-    min-width: 55px;
-    text-align: center;
-    padding: 6px;
-    margin-right: 12px;
-    background: #fff;
-}
-
-.badge strong {
-    font-size: 18px;
-    display: block;
-}
-
-.badge small {
-    font-size: 12px;
-}
-
-.box {
-    background: #fff;
+    background: #000;
+    color: #fff;
     padding: 12px;
-    margin-top: 20px;
+    text-align: center;
+    font-size: 20px;
+}
+
+.panel {
+    background: #fff;
+    max-width: 420px;
+    margin: 15px auto;
+    padding: 12px;
     border-radius: 6px;
 }
 
-input, button {
+input {
     width: 100%;
     padding: 8px;
-    margin-top: 6px;
     font-size: 14px;
+    margin-bottom: 8px;
 }
 
 button {
-    background: #6699cc;
+    width: 100%;
+    padding: 10px;
+    font-size: 15px;
+    background: #000;
     color: #fff;
     border: none;
     cursor: pointer;
+    margin-top: 6px;
 }
 
-.hidden {
-    display: none;
+.add {
+    background: #444;
+}
+
+.duty {
+    max-width: 420px;
+    background: #fff;
+    margin: 15px auto;
+    border: 1px solid #ccc;
+}
+
+.duty-header {
+    padding: 10px;
+    border-bottom: 1px solid #ccc;
+}
+
+.route {
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.depot {
+    font-size: 13px;
+    color: #555;
+}
+
+.trip {
+    display: grid;
+    grid-template-columns: 60px auto;
+    padding: 8px 10px;
+    border-bottom: 1px solid #eee;
+    font-size: 14px;
+}
+
+.time {
+    font-weight: bold;
+}
+
+.footer {
+    padding: 8px 10px;
+    font-size: 12px;
+    background: #f5f5f5;
 }
 </style>
 </head>
 
 <body>
 
-<header>CreateBusTimes</header>
+<header>MyBusTimes Duty Generator</header>
 
-<main>
-    <h1>Your Bus Company</h1>
-    <div class="sub">A fictional bus company created by you</div>
+<div class="panel">
+    <input id="routeInput" placeholder="Route number (e.g. X1)">
+    <input id="depotInput" placeholder="Depot (e.g. Wick)">
 
-    <div class="tabs">
-        <button class="active" onclick="showTab('services')">Services</button>
-        <button onclick="showTab('fleet')">Fleet</button>
-        <button onclick="showTab('addService')">Add Service</button>
-        <button onclick="showTab('addVehicle')">Add Vehicle</button>
-    </div>
+    <hr>
 
-    <!-- SERVICES -->
-    <div id="services" class="list"></div>
+    <input id="timeInput" placeholder="Time (HH:MM)">
+    <input id="stopInput" placeholder="Stop name">
 
-    <!-- FLEET -->
-    <div id="fleet" class="list hidden"></div>
+    <button class="add" onclick="addTrip()">Add trip</button>
+    <button onclick="generateDuty()">Generate duty</button>
+</div>
 
-    <!-- ADD SERVICE -->
-    <div id="addService" class="box hidden">
-        <h3>Add Service</h3>
-        <input id="svcCode" placeholder="Service code (e.g. A1)">
-        <input id="svcName" placeholder="Service name">
-        <input id="svcDesc" placeholder="Service description">
-        <button onclick="addService()">Add Service</button>
-    </div>
-
-    <!-- ADD VEHICLE -->
-    <div id="addVehicle" class="box hidden">
-        <h3>Add Vehicle</h3>
-        <input id="vehFleet" placeholder="Fleet number">
-        <input id="vehType" placeholder="Vehicle type">
-        <input id="vehReg" placeholder="Registration (fictional)">
-        <button onclick="addVehicle()">Add Vehicle</button>
-    </div>
-</main>
+<div id="output"></div>
 
 <script>
-let services = JSON.parse(localStorage.getItem("cbtServices")) || [];
-let vehicles = JSON.parse(localStorage.getItem("cbtVehicles")) || [];
+let trips = [];
 
-function save() {
-    localStorage.setItem("cbtServices", JSON.stringify(services));
-    localStorage.setItem("cbtVehicles", JSON.stringify(vehicles));
+function addTrip() {
+    const time = document.getElementById("timeInput").value;
+    const stop = document.getElementById("stopInput").value;
+
+    if (!time || !stop) {
+        alert("Enter time and stop");
+        return;
+    }
+
+    trips.push({ time, stop });
+
+    document.getElementById("timeInput").value = "";
+    document.getElementById("stopInput").value = "";
 }
 
-function showTab(tab) {
-    document.querySelectorAll(".tabs button").forEach(b => b.classList.remove("active"));
-    event.target.classList.add("active");
+function generateDuty() {
+    const route = document.getElementById("routeInput").value;
+    const depot = document.getElementById("depotInput").value;
 
-    ["services","fleet","addService","addVehicle"].forEach(id => {
-        document.getElementById(id).classList.add("hidden");
-    });
+    if (!route || !depot || trips.length === 0) {
+        alert("Fill route, depot and add at least one trip");
+        return;
+    }
 
-    document.getElementById(tab).classList.remove("hidden");
-}
-
-function addService() {
-    if (!svcCode.value) return alert("Enter a service code");
-    services.push({
-        code: svcCode.value,
-        name: svcName.value,
-        desc: svcDesc.value
-    });
-    save();
-    render();
-    svcCode.value = svcName.value = svcDesc.value = "";
-}
-
-function addVehicle() {
-    if (!vehFleet.value) return alert("Enter fleet number");
-    vehicles.push({
-        fleet: vehFleet.value,
-        type: vehType.value,
-        reg: vehReg.value
-    });
-    save();
-    render();
-    vehFleet.value = vehType.value = vehReg.value = "";
-}
-
-function render() {
-    servicesDiv.innerHTML = "";
-    fleetDiv.innerHTML = "";
-
-    services.forEach(s => {
-        servicesDiv.innerHTML += `
-        <div class="item">
-            <div class="badge">
-                <strong>${s.code}</strong>
-                <small>${s.name}</small>
+    let html = `
+        <div class="duty">
+            <div class="duty-header">
+                <div class="route">${route}</div>
+                <div class="depot">${depot} Depot</div>
             </div>
-            ${s.desc}
-        </div>`;
-    });
+    `;
 
-    vehicles.forEach(v => {
-        fleetDiv.innerHTML += `
-        <div class="item">
-            <div class="badge">
-                <strong>${v.fleet}</strong>
+    trips.forEach(t => {
+        html += `
+            <div class="trip">
+                <div class="time">${t.time}</div>
+                <div>${t.stop}</div>
             </div>
-            ${v.type} – ${v.reg}
-        </div>`;
+        `;
     });
+
+    html += `
+        <div class="footer">
+            User-generated duty • MyBusTimes-style
+        </div>
+        </div>
+    `;
+
+    document.getElementById("output").innerHTML = html;
 }
-
-const servicesDiv = document.getElementById("services");
-const fleetDiv = document.getElementById("fleet");
-
-render();
 </script>
 
 </body>
